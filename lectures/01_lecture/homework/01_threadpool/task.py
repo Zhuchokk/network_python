@@ -16,6 +16,7 @@
 """
 
 from typing import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # ═══════════════════════════════════════════════════════════
@@ -61,9 +62,12 @@ def fetch_all(urls: list[str], max_workers: int = 4) -> list[str]:
         >>> fetch_all(["a", "b", "c"], max_workers=2)
         ['data:a', 'data:b', 'data:c']
     """
-    # TODO: реализуйте
-    raise NotImplementedError
-
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = [pool.submit(fetch_one, url) for url in urls]
+        res = []
+        for f in futures:
+            res.append(f.result())
+        return res
 
 # ═══════════════════════════════════════════════════════════
 # ЗАДАНИЕ 1.2 — Обработка ошибок
@@ -85,9 +89,16 @@ def fetch_all_with_errors(urls: list[str], max_workers: int = 4) -> list[str | N
         - Для "bad" URL вернуть None
         - Для остальных — результат fetch_one()
     """
-    # TODO: реализуйте
-    raise NotImplementedError
-
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = [None if 'bad' in url else pool.submit(fetch_one, url) for url in urls]
+        res = []
+        for f in futures:
+            if f is not None:
+                res.append(f.result())
+            else:
+                res.append(None)
+        return res
+            
 
 # ═══════════════════════════════════════════════════════════
 # ЗАДАНИЕ 1.3 — Прогресс-бар (повышенная сложность)
@@ -121,7 +132,16 @@ def fetch_all_with_progress(
         results = fetch_all_with_progress(
             ["a", "b", "c"], max_workers=2, progress_callback=on_progress
         )
-        # completed[-1] == 3
-    """
-    # TODO: реализуйте
-    raise NotImplementedError
+        # completed[-1] == 3 """
+    with ThreadPoolExecutor(max_workers) as pool:
+        futures = [pool.submit(fetch_one, url) for url in urls]
+        res = []
+        completed = 0
+        total = len(futures)
+        for f in as_completed(futures):
+            completed += 1
+            res.append(f.result())
+            if progress_callback is not None:
+                progress_callback(completed, total)
+    return res
+
