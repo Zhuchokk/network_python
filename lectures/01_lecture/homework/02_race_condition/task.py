@@ -15,7 +15,7 @@
 """
 
 import threading
-
+import time
 
 # ═══════════════════════════════════════════════════════════
 # ЗАДАНИЕ 2.1 — Имитация гонки
@@ -37,10 +37,12 @@ def increment_with_race(counter: list[int], times: int) -> None:
         - Не использовать Lock
         - Содержать искусственную задержку между чтением и записью
     """
-    # TODO: реализуйте
-    raise NotImplementedError
-
-
+    for i in range(times):
+        acquire = counter[0]
+        time.sleep(0.000001)
+        acquire += 1
+        counter[0] = acquire
+        
 # ═══════════════════════════════════════════════════════════
 # ЗАДАНИЕ 2.2 — Исправление через Lock
 # ═══════════════════════════════════════════════════════════
@@ -56,9 +58,11 @@ def increment_safe(counter: list[int], times: int, lock: threading.Lock) -> None
         - Критическая секция должна быть минимальной
           (только чтение + запись, не весь цикл)
     """
-    # TODO: реализуйте
-    raise NotImplementedError
 
+    for i in range(times):
+        lock.acquire()
+        counter[0] += 1
+        lock.release()
 
 # ═══════════════════════════════════════════════════════════
 # ЗАДАНИЕ 2.3 — Банковский счёт (повышенная сложность)
@@ -94,17 +98,24 @@ class BankAccount:
 
     def __init__(self, initial_balance: float = 0.0) -> None:
         self.balance = initial_balance
-        # TODO: добавьте Lock
-        raise NotImplementedError
+        self.lock = threading.Lock()
 
     def deposit(self, amount: float) -> None:
-        # TODO: реализуйте
-        raise NotImplementedError
+        self.lock.acquire()
+        self.balance += amount 
+        self.lock.release()
 
     def withdraw(self, amount: float) -> None:
-        # TODO: реализуйте
-        raise NotImplementedError
+        self.lock.acquire()
+        if amount <= self.balance:
+            self.balance -= amount
+            self.lock.release()
+        else:
+            self.lock.release()
+            raise InsufficientFundsError(f"User's balance: {self.balance}")
 
     def get_balance(self) -> float:
-        # TODO: реализуйте
-        raise NotImplementedError
+        self.lock.acquire()
+        res = self.balance
+        self.lock.release()
+        return res
